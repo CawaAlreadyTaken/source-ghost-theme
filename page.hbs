@@ -1,26 +1,53 @@
 {{!< default}}
-{{!-- The tag above means: insert everything in this file into the body of the default.hbs template --}}
-
-{{#post}}
-
-<main class="gh-main">
+<main id="main-content" class="content">
+  {{!--
+    To get a specific page for the channel header, filter for a
+    specific, static page slug or use a distinct tag for that page.
+  --}}
+  {{#with page}}
     <article class="gh-article {{post_class}}">
-
         {{#match @page.show_title_and_feature_image}}
             <header class="gh-article-header gh-canvas">
                 <h1 class="gh-article-title is-title">{{title}}</h1>
+
+                {{> "feature-image" size="m"}}
                 {{#if custom_excerpt}}
                     <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
                 {{/if}}
-                {{> "feature-image"}}
             </header>
         {{/match}}
-
         <section class="gh-content gh-canvas is-body">
             {{content}}
         </section>
-
     </article>
+  {{/with}}
+
+<section class="gh-container is-list gh-outer">
+<div class="gh-container-inner gh-inner">
+<main class="gh-main">
+    {{#foreach posts}}
+      {{> "post-card" lazyLoad=true}}
+      {{#unless @last}}<hr class="gh-article-divider">{{/unless}}
+    {{/foreach}}
+</main>
+</div>
+</section>
+<div class="gh-pagination-container">
+  {{> "pagination"}}
+</div>
+<br>
 </main>
 
-{{/post}}
+<style>
+.gh-article-divider {
+  margin: 3rem 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.gh-pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+</style>
