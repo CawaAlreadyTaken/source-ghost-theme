@@ -1,10 +1,10 @@
-function pathnameParser(pathname) {
-  if (!/page/.test(pathname)) {
-    return pathname;
-  }
-
-  return pathname.split("page")[0];
-}
+//function pathnameParser(pathname) {
+//  if (!/page/.test(pathname)) {
+//    return pathname;
+//  }
+//
+//  return pathname.split("page")[0];
+//}
 
 function navButtonFormatter(nextOrPrevEl, nextOrPrevName, paginationEl) {
   const icon = nextOrPrevName === "previous" ? "left" : "right";
@@ -68,3 +68,56 @@ export default function generatePagination() {
 
   navButtonFormatter(next, "next", pagination);
 }
+
+
+
+function pagination(isInfinite = true, done, isMasonry = false) {
+    const feedElement = document.querySelector('.gh-feed');
+    if (!feedElement) return;
+
+    let loading = false;
+    const target = document.querySelector('.gh-footer');
+    const buttonElement = document.querySelector('.gh-loadmore');
+
+    if (!document.querySelector('link[rel=next]') && buttonElement) {
+        buttonElement.remove();
+    }
+
+    const loadNextPage = async function () {
+        const nextElement = document.querySelector('link[rel=next]');
+        if (!nextElement) return;
+
+        try {
+            const res = await fetch(nextElement.href);
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const postElements = doc.querySelectorAll('.gh-feed:not(.gh-featured):not(.gh-related) > *');
+            const fragment = document.createDocumentFragment();
+            const elems = [];
+
+            postElements.forEach(function (post) {
+                var clonedItem = document.importNode(post, true);
+
+                if (isMasonry) {
+                    clonedItem.style.visibility = 'hidden';
+                }
+
+                fragment.appendChild(clonedItem);
+                elems.push(clonedItem);
+            });
+
+            feedElement.appendChild(fragment);
+
+            if (done) {
+                done(elems, loadNextWithCheck);
+            }
+
+            const resNextElement = doc.querySelector('link[rel=next]');
+            if (resNextElement && resNextElement.href) {
+                nextElement.href = resNextElement.href;
+            } else {
+                nextElement.remove();
+                if (buttonElement) {
+                    buttonElement.remove();
