@@ -1,95 +1,70 @@
-function pagination(isInfinite = true, done, isMasonry = false) {
-    const feedElement = document.querySelector('.gh-feed');
-    if (!feedElement) return;
+function pathnameParser(pathname) {
+  if (!/page/.test(pathname)) {
+    return pathname;
+  }
 
-    let loading = false;
-    const target = document.querySelector('.gh-footer');
-    const buttonElement = document.querySelector('.gh-loadmore');
+  return pathname.split("page")[0];
+}
 
-    if (!document.querySelector('link[rel=next]') && buttonElement) {
-        buttonElement.remove();
-    }
+function navButtonFormatter(nextOrPrevEl, nextOrPrevName, paginationEl) {
+  const icon = nextOrPrevName === "previous" ? "left" : "right";
+  const className = nextOrPrevName === "previous" ? "sm-prev" : "sm-next";
 
-    const loadNextPage = async function () {
-        const nextElement = document.querySelector('link[rel=next]');
-        if (!nextElement) return;
+  const navButton = nextOrPrevEl
+    ? document.createElement("a")
+    : document.createElement("span");
+  navButton.innerHTML = `<svg aria-hidden="true"><use href="#sm-${icon}-arrow-icon"></use></svg>`;
+  navButton.classList.add("sm-circle-icon-button", className);
 
-        try {
-            const res = await fetch(nextElement.href);
-            const html = await res.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+  if (nextOrPrevEl) {
+    navButton.setAttribute("aria-label", `${nextOrPrevName} posts`);
+    navButton.setAttribute("href", nextOrPrevEl);
+  } else {
+    navButton.classList.add("sm-circle-icon-button", "sm-nav-disabled");
+  }
 
-            const postElements = doc.querySelectorAll('.gh-feed:not(.gh-featured):not(.gh-related) > *');
-            const fragment = document.createDocumentFragment();
-            const elems = [];
+  paginationEl.append(navButton);
+}
 
-            postElements.forEach(function (post) {
-                var clonedItem = document.importNode(post, true);
+export default function generatePagination() {
+  const pagination = document.querySelector(".sm-pagination");
+  
+  if (!pagination) return;
+  pagination.setAttribute("aria-label", "page selector");
+  const pathname = pathnameParser(window.location.pathname);
+  const { page, prev, next, pages } = pagination.dataset;
 
-                if (isMasonry) {
-                    clonedItem.style.visibility = 'hidden';
-                }
+  navButtonFormatter(prev, "previous", pagination);
 
-                fragment.appendChild(clonedItem);
-                elems.push(clonedItem);
-            });
+  const paginationStart = page - 2 > 0 ? page - 2 : 1;
 
-            feedElement.appendChild(fragment);
+  for (
+    let index = paginationStart - 1;
+    index < Math.min(paginationStart + 4, +pages);
+    index += 1
+  ) {
+    let urlPath;
 
-            if (done) {
-                done(elems, loadNextWithCheck);
-            }
-
-            const resNextElement = doc.querySelector('link[rel=next]');
-            if (resNextElement && resNextElement.href) {
-                nextElement.href = resNextElement.href;
-            } else {
-                nextElement.remove();
-                if (buttonElement) {
-                    buttonElement.remove();
-                }
-            }
-        } catch (e) {
-            nextElement.remove();
-            throw e;
-        }
-    };
-
-    const loadNextWithCheck = async function () {
-        if (target.getBoundingClientRect().top <= window.innerHeight && document.querySelector('link[rel=next]')) {
-            await loadNextPage();
-        }
-    }
-
-    const callback = async function (entries) {
-        if (loading) return;
-
-        loading = true;
-
-        if (entries[0].isIntersecting) {
-            // keep loading next page until target is out of the viewport or we've loaded the last page
-            if (!isMasonry) {
-                while (target.getBoundingClientRect().top <= window.innerHeight && document.querySelector('link[rel=next]')) {
-                    await loadNextPage();
-                }
-            } else {
-                await loadNextPage();
-            }
-        }
-
-        loading = false;
-
-        if (!document.querySelector('link[rel=next]')) {
-            observer.disconnect();
-        }
-    };
-
-    const observer = new IntersectionObserver(callback);
-
-    if (isInfinite) {
-        observer.observe(target);
+    if (index === 0 && pathname === "/") {
+      urlPath = "/";
+    } else if (index === 0 && pathname !== "/") {
+      urlPath = pathname;
     } else {
-        buttonElement.addEventListener('click', loadNextPage);
+      urlPath = `${pathname}page/${index + 1}/`;
     }
+
+    const div = document.createElement("div");
+    div.classList.add("sm-pagination-item");
+    const a = document.createElement("a");
+    a.setAttribute("href", urlPath);
+    a.textContent = index + 1;
+
+    if (+page === index + 1) {
+      div.classList.add("sm-current");
+    }
+    div.append(a);
+    pagination.append(div);
+  }
+
+  navButtonFormatter(next, "next", pagination);
 }
