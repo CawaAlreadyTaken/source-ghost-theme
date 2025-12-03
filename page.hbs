@@ -8,9 +8,9 @@
     <article class="gh-article {{post_class}}">
         {{#match @page.show_title_and_feature_image}}
             <header class="gh-article-header gh-canvas">
+                <h1 class="gh-article-title is-title">{{title}}</h1>
+
                 {{> "feature-image" size="m"}}
-                <br>
-                <h1 class="gh-article-title is-title" style="margin-top: 30px" >{{title}}</h1>
                 {{#if custom_excerpt}}
                     <p class="gh-article-excerpt is-body">{{custom_excerpt}}</p>
                 {{/if}}
